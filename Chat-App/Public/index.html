@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat Realtime</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark">
+
+<div class="app">
+  <div class="chat-box">
+
+  <div class="header">
+  <button id="logout" class="logout-btn">Thoát</button>
+  <div class="group-name">Nhóm xào xáo</div>
+
+  <button id="themeToggle" class="theme-btn">🌙</button>
+</div>
+
+
+  <div id="messages"></div>
+  <div id="typing"></div>
+
+  <div class="input-area">
+    <button id="emojiBtn">😄</button>
+    <input id="msg" placeholder="Nhập tin nhắn..." />
+    <button id="send">Gửi</button>
+  </div>
+  
+
+  <div id="emojiPicker" class="hidden"></div>
+</div>
+
+  <div class="sidebar">
+    <h3>Online</h3>
+    <div id="onlineUsers"></div>
+
+    <h3>Thông báo</h3>
+    <div id="notifications"></div>
+
+  </div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
