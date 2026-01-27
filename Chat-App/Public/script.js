@@ -29,9 +29,23 @@ const messages = document.getElementById("messages");
 const typingDiv = document.getElementById("typing");
 const onlineUsers = document.getElementById("onlineUsers");
 const notifications = document.getElementById("notifications");
+const imgBtn = document.getElementById("imgBtn");
+const imgInput = document.getElementById("imgInput");
 
 let typingTimeout;
 let lastTyping = 0;
+
+// Helper: convert URLs in text to anchor tags
+function linkify(text) {
+  const urlRegex = /((https?:\/\/|www\.)[^\s]+)/gi;
+  return text.replace(urlRegex, function(url) {
+    let href = url;
+    if (!href.match(/^https?:\/\//i)) {
+      href = 'http://' + href;
+    }
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+  });
+}
 
 ws.onmessage = e => {
   const data = JSON.parse(e.data);
@@ -44,20 +58,50 @@ ws.onmessage = e => {
     sender.className = "sender";
     sender.innerText = data.from;
 
-if (data.from !== username) {
-  sender.style.color = getNameColor(data.from);
-} else {
-  sender.style.color = "white";
-}
+    if (data.from !== username) {
+      sender.style.color = getNameColor(data.from);
+    } else {
+      sender.style.color = "white";
+    }
     const text = document.createElement("div");
 
     text.className = "text";
     text.dataset.raw = data.text;
 
-    text.innerText = data.text;
+    text.innerHTML = linkify(data.text);
 
     div.appendChild(sender);
     div.appendChild(text);
+
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  if (data.type === "image") {
+    const div = document.createElement("div");
+    div.className = "message " + (data.from === username ? "me" : "other");
+
+    const sender = document.createElement("div");
+    sender.className = "sender";
+    sender.innerText = data.from;
+
+    if (data.from !== username) {
+      sender.style.color = getNameColor(data.from);
+    } else {
+      sender.style.color = "white";
+    }
+
+    const img = document.createElement("img");
+    img.src = data.data; // data is a DataURL
+    img.alt = data.filename || "image";
+
+    const caption = document.createElement("div");
+    caption.className = "image-caption";
+    caption.innerText = data.filename || "";
+
+    div.appendChild(sender);
+    div.appendChild(img);
+    if (caption.innerText) div.appendChild(caption);
 
     messages.appendChild(div);
     messages.scrollTop = messages.scrollHeight;
@@ -112,6 +156,30 @@ msgInput.addEventListener("input", () => {
     ws.send(JSON.stringify({ type: "typing" }));
     lastTyping = now;
   }
+});
+
+// Image send logic
+imgBtn.onclick = () => {
+  imgInput.click();
+};
+
+imgInput.addEventListener("change", () => {
+  const file = imgInput.files && imgInput.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const dataUrl = reader.result; // base64 DataURL
+    ws.send(JSON.stringify({
+      type: "image",
+      filename: file.name,
+      data: dataUrl
+    }));
+  };
+  reader.readAsDataURL(file);
+
+  // reset input so same file can be picked again if needed
+  imgInput.value = "";
 });
 
 const emojis = ["😀","😂","😍","😎","😭","👍","🔥"];
@@ -175,3 +243,4 @@ searchInput.addEventListener("input", () => {
     }
   });
 });
+

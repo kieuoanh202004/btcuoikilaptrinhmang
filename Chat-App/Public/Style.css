@@ -95,6 +95,24 @@ button {
   word-wrap: break-word;
 }
 
+.message img {
+  display: block;
+  max-width: 320px;
+  max-height: 320px;
+  width: auto;
+  height: auto;
+  border-radius: 12px;
+  margin-top: 8px;
+  object-fit: cover;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.image-caption {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
 .me {
   background: #3883d8;
   margin-left: auto;
@@ -121,6 +139,7 @@ button {
   display: flex;
   gap: 16px;
   padding-top: 16px;
+  align-items: center;
 }
 
 input {
@@ -129,6 +148,12 @@ input {
   font-size: 1.1rem;
   border-radius: 16px;
   border: none;
+}
+
+#imgBtn {
+  padding: 12px 14px;
+  font-size: 1rem;
+  background: rgba(255,255,255,0.06);
 }
 
 .sidebar {

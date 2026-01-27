@@ -68,6 +68,14 @@ async def handler(websocket):
                     "text": data["text"]
                 }))
 
+            elif data["type"] == "image":
+                await broadcast(json.dumps({
+                    "type": "image",
+                    "from": clients.get(websocket, "Unknown"),
+                    "filename": data.get("filename"),
+                    "data": data.get("data")
+                }))
+
             elif data["type"] == "typing":
                 user = clients.get(websocket)
                 if user:
