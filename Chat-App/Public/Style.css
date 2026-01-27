@@ -215,3 +215,28 @@ input {
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #746159, #746159);
 }
+
+.search-box {
+  flex: none;
+  width: 180px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  margin-left: 20px;
+  border-radius: 20px;
+  transition: width 0.3s ease;
+}
+
+.search-box:focus {
+  width: 250px;
+  outline: none;
+  box-shadow: 0 0 5px rgba(56, 131, 216, 0.5);
+}
+
+
+.highlight {
+  background-color: #ffeb3b;
+  color: #000;
+  border-radius: 4px;
+  padding: 0 2px;
+  font-weight: bold;
+}

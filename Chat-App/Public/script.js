@@ -49,9 +49,11 @@ if (data.from !== username) {
 } else {
   sender.style.color = "white";
 }
-
-
     const text = document.createElement("div");
+
+    text.className = "text";
+    text.dataset.raw = data.text;
+
     text.innerText = data.text;
 
     div.appendChild(sender);
@@ -150,3 +152,26 @@ toggleBtn.onclick = () => {
   }
 };
 
+const searchInput = document.getElementById("searchInput");
+
+searchInput.addEventListener("input", () => {
+  const keyword = searchInput.value.toLowerCase().trim();
+  const allMessages = document.querySelectorAll("#messages .message .text");
+
+  allMessages.forEach(msgTag => {
+    const originalText = msgTag.dataset.raw; // Lấy nội dung gốc đã lưu trong data-raw
+
+    if (!keyword) {
+      msgTag.innerText = originalText;
+      return;
+    }
+
+    if (originalText.toLowerCase().includes(keyword)) {
+      const regex = new RegExp(`(${keyword})`, "gi");
+      const highlightedText = originalText.replace(regex, `<span class="highlight">$1</span>`);
+      msgTag.innerHTML = highlightedText;
+    } else {
+      msgTag.innerText = originalText;
+    }
+  });
+});
