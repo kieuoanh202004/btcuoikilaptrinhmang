@@ -1,4 +1,6 @@
 const ws = new WebSocket("ws://localhost:8765");
+
+/* ===== COLOR NAME ===== */
 const nameColors = {};
 const palette = [
   "#22c55e", "#38bdf8", "#f59e0b",
@@ -7,60 +9,97 @@ const palette = [
 
 function getNameColor(name) {
   if (!nameColors[name]) {
-    nameColors[name] = palette[
-      Object.keys(nameColors).length % palette.length
-    ];
+    nameColors[name] =
+      palette[Object.keys(nameColors).length % palette.length];
   }
   return nameColors[name];
 }
 
-
+/* ===== USER INPUT ===== */
 let username = prompt("Nhập tên của bạn:");
 while (!username) {
-  username = prompt("Tên không được để trống. Nhập lại:");
+  username = prompt("Tên không được để trống:");
 }
 
-ws.onopen = () => {
-  ws.send(JSON.stringify({ type: "join", username }));
-};
+let room = prompt("Nhập mã phòng (để trống để tạo phòng mới):");
 
+/* ===== STATE ===== */
+let isAdmin = false;
+
+/* ===== DOM ===== */
 const msgInput = document.getElementById("msg");
 const messages = document.getElementById("messages");
 const typingDiv = document.getElementById("typing");
 const onlineUsers = document.getElementById("onlineUsers");
 const notifications = document.getElementById("notifications");
+const roomCodeEl = document.getElementById("roomCode");
 
+/* ===== TYPING ===== */
 let typingTimeout;
 let lastTyping = 0;
 
+/* ===== CONNECT ===== */
+ws.onopen = () => {
+  ws.send(JSON.stringify({
+    type: "join",
+    username,
+    room: room || null
+  }));
+};
+
+/* ===== TIME FORMAT ===== */
+function formatTime(ts) {
+  const d = new Date(ts * 1000);
+  return d.toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+/* ===== RECEIVE ===== */
 ws.onmessage = e => {
   const data = JSON.parse(e.data);
 
+  /* ===== ROOM JOINED ===== */
+  if (data.type === "room_joined") {
+    roomCodeEl.innerText = "🔑 " + data.room;
+    isAdmin = data.admin === username;
+    return;
+  }
+
+  /* ===== CHAT MESSAGE ===== */
   if (data.type === "message") {
     const div = document.createElement("div");
-    div.className = "message " + (data.from === username ? "me" : "other");
+    div.className =
+      "message " + (data.from === username ? "me" : "other");
 
-    const sender = document.createElement("div");
-    sender.className = "sender";
+    const senderRow = document.createElement("div");
+    senderRow.className = "sender";
+
+    const sender = document.createElement("span");
     sender.innerText = data.from;
+    sender.style.color =
+      data.from === username ? "white" : getNameColor(data.from);
 
-if (data.from !== username) {
-  sender.style.color = getNameColor(data.from);
-} else {
-  sender.style.color = "white";
-}
+    const time = document.createElement("span");
+    time.style.marginLeft = "8px";
+    time.style.fontSize = "0.8rem";
+    time.style.opacity = "0.7";
+    time.innerText = formatTime(data.time);
 
+    senderRow.appendChild(sender);
+    senderRow.appendChild(time);
 
     const text = document.createElement("div");
     text.innerText = data.text;
 
-    div.appendChild(sender);
+    div.appendChild(senderRow);
     div.appendChild(text);
-
     messages.appendChild(div);
     messages.scrollTop = messages.scrollHeight;
   }
 
+  /* ===== TYPING ===== */
   if (data.type === "typing" && data.user !== username) {
     typingDiv.innerText = `${data.user} đang nhập...`;
     clearTimeout(typingTimeout);
@@ -69,16 +108,53 @@ if (data.from !== username) {
     }, 2000);
   }
 
+  /* ===== ONLINE LIST ===== */
   if (data.type === "online_list") {
     onlineUsers.innerHTML = "";
+
     data.users.forEach(u => {
-      const d = document.createElement("div");
-      d.className = "online";
-      d.innerHTML = `<div class="dot"></div>${u}`;
-      onlineUsers.appendChild(d);
+      const row = document.createElement("div");
+      row.className = "online";
+
+      const dot = document.createElement("span");
+      dot.className = "dot";
+
+      const name = document.createElement("span");
+      name.className = "username";
+      name.innerText = u;
+
+      row.appendChild(dot);
+      row.appendChild(name);
+
+      // 👑 ADMIN ICON
+      if (u === data.admin) {
+        const crown = document.createElement("span");
+        crown.innerText = " 👑";
+        crown.className = "admin";
+        row.appendChild(crown);
+      }
+
+      // KICK (chỉ admin, không kick chính mình)
+      if (isAdmin && u !== username) {
+        const kickBtn = document.createElement("button");
+        kickBtn.innerText = "Kick";
+        kickBtn.className = "kick-btn";
+        kickBtn.onclick = () => {
+          if (confirm(`Kick ${u}?`)) {
+            ws.send(JSON.stringify({
+              type: "kick",
+              user: u
+            }));
+          }
+        };
+        row.appendChild(kickBtn);
+      }
+
+      onlineUsers.appendChild(row);
     });
   }
 
+  /* ===== NOTIFICATION ===== */
   if (data.type === "notification") {
     const n = document.createElement("div");
     n.innerText = data.text;
@@ -86,6 +162,7 @@ if (data.from !== username) {
   }
 };
 
+/* ===== SEND MESSAGE ===== */
 function send() {
   const text = msgInput.value.trim();
   if (!text) return;
@@ -112,6 +189,7 @@ msgInput.addEventListener("input", () => {
   }
 });
 
+/* ===== EMOJI ===== */
 const emojis = ["😀","😂","😍","😎","😭","👍","🔥"];
 const picker = document.getElementById("emojiPicker");
 
@@ -126,27 +204,20 @@ document.getElementById("emojiBtn").onclick = () => {
   picker.classList.toggle("hidden");
 };
 
+/* ===== LOGOUT ===== */
 document.getElementById("logout").onclick = () => {
   ws.close();
   location.reload();
 };
 
+/* ===== THEME ===== */
 const toggleBtn = document.getElementById("themeToggle");
 const body = document.body;
-
 let isDark = true;
 
 toggleBtn.onclick = () => {
   isDark = !isDark;
-
-  if (isDark) {
-    body.classList.add("dark");
-    body.classList.remove("light");
-    toggleBtn.innerText = "🌙";
-  } else {
-    body.classList.add("light");
-    body.classList.remove("dark");
-    toggleBtn.innerText = "☀️";
-  }
+  body.classList.toggle("dark", isDark);
+  body.classList.toggle("light", !isDark);
+  toggleBtn.innerText = isDark ? "🌙" : "☀️";
 };
-
