@@ -28,10 +28,14 @@
     <div id="messages"></div>
     <div id="typing"></div>
 
+    <!-- INPUT AREA (ĐÃ SỬA) -->
     <div class="input-area">
-      <button id="emojiBtn">😄</button>
-      <input id="msg" placeholder="Nhập tin nhắn..." />
-      <button id="send">Gửi</button>
+      <div class="input-wrapper">
+        <input id="msg" placeholder="Nhập tin nhắn..." />
+        <button id="emojiBtn" class="emoji-inside">😄</button>
+      </div>
+
+      <button id="send" class="send-btn"></button>
     </div>
 
     <div id="emojiPicker" class="hidden"></div>
