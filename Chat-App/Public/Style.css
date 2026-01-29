@@ -93,6 +93,7 @@ button {
   font-size: 1.1rem;
   line-height: 1.6;
   word-wrap: break-word;
+  position: relative; /* cho nút reply */
 }
 
 .message img {
@@ -264,4 +265,75 @@ input {
   border-radius: 4px;
   padding: 0 2px;
   font-weight: bold;
+}
+.reply-box {
+  background: rgba(255,255,255,0.1);
+  border-left: 4px solid #38bdf8;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  display: none; /* hidden by default */
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.reply-box:not(.hidden) {
+  display: flex;
+}
+
+.reply-box button {
+  background: none;
+  color: #f87171;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.reply-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+  pointer-events: none;
+}
+
+.message:hover .reply-btn {
+  opacity: 0.9;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto; /* cho phép click khi hiện */
+}
+
+.reply-btn:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+.reply-preview {
+  background: rgba(0,0,0,0.12);
+  padding: 8px 10px;
+  border-left: 3px solid #38bdf8;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+.input-wrapper {
+  position: relative;
+}
+
+.reply-box {
+  position: absolute;
+  bottom: 70px;
+  left: 0;
+  right: 0;
+  z-index: 10;
 }

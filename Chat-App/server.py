@@ -65,7 +65,8 @@ async def handler(websocket):
                 await broadcast(json.dumps({
                     "type": "message",
                     "from": clients.get(websocket, "Unknown"),
-                    "text": data["text"]
+                    "text": data["text"],
+                    "replyTo": data.get("replyTo")
                 }))
 
             elif data["type"] == "image":
@@ -84,6 +85,7 @@ async def handler(websocket):
                         "type": "typing",
                         "user": user
                     }))
+
 
     except Exception as e:
         print("❌ Lỗi WebSocket:", e)
