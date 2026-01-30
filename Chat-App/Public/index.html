@@ -8,8 +8,6 @@
 <body class="dark">
 
 <div class="app">
-
-  <!-- LEFT: ROOMS -->
   <div class="rooms">
     <h3>Phòng chat</h3>
     <div id="roomList">
@@ -17,7 +15,6 @@
     </div>
   </div>
 
-  <!-- CENTER: CHAT -->
   <div class="chat-box">
     <div class="header">
       <button id="logout" class="logout-btn">Thoát</button>
@@ -28,7 +25,6 @@
     <div id="messages"></div>
     <div id="typing"></div>
 
-    <!-- INPUT AREA (ĐÃ SỬA) -->
     <div class="input-area">
       <div class="input-wrapper">
         <input id="msg" placeholder="Nhập tin nhắn..." />
@@ -41,7 +37,6 @@
     <div id="emojiPicker" class="hidden"></div>
   </div>
 
-  <!-- RIGHT: ONLINE -->
   <div class="sidebar">
     <h3>Online</h3>
     <div id="onlineUsers"></div>
@@ -53,6 +48,27 @@
     <div id="notifications"></div>
   </div>
 
+<div class="modal hidden" id="modal">
+  <div class="modal-box">
+    <h3 id="modalTitle">Nhập</h3>
+
+    <input id="modalInput" type="text" placeholder="Nhập tại đây..." />
+
+    <div class="modal-actions">
+      <button type="button" id="modalOk">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="kickModal">
+  <div class="modal-box">
+    <h3 id="kickTitle">Kick người dùng?</h3>
+
+    <div class="modal-actions">
+      <button id="kickConfirm">Xác nhận</button>
+      <button id="kickCancel">Hủy</button>
+    </div>
+  </div>
 </div>
 
 <script src="script.js"></script>

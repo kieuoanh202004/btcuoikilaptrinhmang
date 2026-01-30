@@ -1,6 +1,5 @@
 const ws = new WebSocket("ws://localhost:8765");
 
-/* ===== COLOR NAME ===== */
 const nameColors = {};
 const palette = [
   "#22c55e", "#38bdf8", "#f59e0b",
@@ -15,18 +14,51 @@ function getNameColor(name) {
   return nameColors[name];
 }
 
-/* ===== USER INPUT ===== */
-let username = prompt("Nhập tên của bạn:");
-while (!username) {
-  username = prompt("Tên không được để trống:");
+const modal = document.getElementById("modal");
+const modalInput = document.getElementById("modalInput");
+const modalTitle = document.getElementById("modalTitle");
+const modalOk = document.getElementById("modalOk");
+
+let username = "";
+let room = "";
+
+modalInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    modalOk.click();
+  }
+});
+
+function ask(text, callback) {
+  modalTitle.innerText = text;
+  modalInput.value = "";
+  modal.classList.remove("hidden");
+  modalInput.focus();
+
+  modalOk.onclick = () => {
+    const v = modalInput.value.trim();
+    if (!v && text.includes("tên")) return;
+    modal.classList.add("hidden");
+    callback(v);
+  };
 }
 
-let room = prompt("Nhập mã phòng (để trống để tạo phòng mới):");
+ask("Nhập tên của bạn", name => {
+  username = name;
 
-/* ===== STATE ===== */
+  ask("Nhập mã phòng (để trống để tạo phòng mới)", r => {
+    room = r || null;
+    if (ws.readyState === WebSocket.OPEN) joinRoom();
+  });
+});
+
+ws.onopen = () => {
+  if (username) joinRoom();
+};
+
 let isAdmin = false;
+let currentAdmin = null;
 
-/* ===== DOM ===== */
 const msgInput = document.getElementById("msg");
 const messages = document.getElementById("messages");
 const typingDiv = document.getElementById("typing");
@@ -34,20 +66,16 @@ const onlineUsers = document.getElementById("onlineUsers");
 const notifications = document.getElementById("notifications");
 const roomCodeEl = document.getElementById("roomCode");
 
-/* ===== TYPING ===== */
-let typingTimeout;
-let lastTyping = 0;
+function joinRoom() {
+  if (ws.readyState !== WebSocket.OPEN) return;
 
-/* ===== CONNECT ===== */
-ws.onopen = () => {
   ws.send(JSON.stringify({
     type: "join",
     username,
-    room: room || null
+    room
   }));
-};
+}
 
-/* ===== TIME FORMAT ===== */
 function formatTime(ts) {
   const d = new Date(ts * 1000);
   return d.toLocaleTimeString("vi-VN", {
@@ -56,22 +84,37 @@ function formatTime(ts) {
   });
 }
 
-/* ===== RECEIVE ===== */
 ws.onmessage = e => {
   const data = JSON.parse(e.data);
 
-  /* ===== ROOM JOINED ===== */
   if (data.type === "room_joined") {
     roomCodeEl.innerText = "🔑 " + data.room;
-    isAdmin = data.admin === username;
+
+    currentAdmin = data.admin;
+    isAdmin = currentAdmin === username;
+
+    messages.innerHTML = "";
+    notifications.innerHTML = "";
+    typingDiv.innerText = "";
     return;
   }
 
-  /* ===== CHAT MESSAGE ===== */
+  if (data.type === "kicked") {
+    alert("Bạn đã bị kick khỏi phòng!");
+    messages.innerHTML = "";
+    onlineUsers.innerHTML = "";
+    notifications.innerHTML = "";
+    typingDiv.innerText = "";
+    roomCodeEl.innerText = "";
+
+    try { ws.close(); } catch(e) {}
+    setTimeout(() => location.reload(), 100);
+    return;
+  }
+
   if (data.type === "message") {
     const div = document.createElement("div");
-    div.className =
-      "message " + (data.from === username ? "me" : "other");
+    div.className = "message " + (data.from === username ? "me" : "other");
 
     const senderRow = document.createElement("div");
     senderRow.className = "sender";
@@ -99,18 +142,19 @@ ws.onmessage = e => {
     messages.scrollTop = messages.scrollHeight;
   }
 
-  /* ===== TYPING ===== */
   if (data.type === "typing" && data.user !== username) {
     typingDiv.innerText = `${data.user} đang nhập...`;
-    clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => {
-      typingDiv.innerText = "";
-    }, 2000);
   }
 
-  /* ===== ONLINE LIST ===== */
+  if (data.type === "stop_typing") {
+    typingDiv.innerText = "";
+  }
+
   if (data.type === "online_list") {
     onlineUsers.innerHTML = "";
+
+    currentAdmin = data.admin;
+    isAdmin = currentAdmin === username;
 
     data.users.forEach(u => {
       const row = document.createElement("div");
@@ -126,27 +170,18 @@ ws.onmessage = e => {
       row.appendChild(dot);
       row.appendChild(name);
 
-      // 👑 ADMIN ICON
-      if (u === data.admin) {
+      if (u === currentAdmin) {
         const crown = document.createElement("span");
         crown.innerText = " 👑";
         crown.className = "admin";
         row.appendChild(crown);
       }
 
-      // KICK (chỉ admin, không kick chính mình)
       if (isAdmin && u !== username) {
         const kickBtn = document.createElement("button");
         kickBtn.innerText = "Kick";
         kickBtn.className = "kick-btn";
-        kickBtn.onclick = () => {
-          if (confirm(`Kick ${u}?`)) {
-            ws.send(JSON.stringify({
-              type: "kick",
-              user: u
-            }));
-          }
-        };
+        kickBtn.onclick = () => showKickModal(u);
         row.appendChild(kickBtn);
       }
 
@@ -154,7 +189,6 @@ ws.onmessage = e => {
     });
   }
 
-  /* ===== NOTIFICATION ===== */
   if (data.type === "notification") {
     const n = document.createElement("div");
     n.innerText = data.text;
@@ -162,7 +196,6 @@ ws.onmessage = e => {
   }
 };
 
-/* ===== SEND MESSAGE ===== */
 function send() {
   const text = msgInput.value.trim();
   if (!text) return;
@@ -178,9 +211,13 @@ function send() {
 document.getElementById("send").onclick = send;
 
 msgInput.addEventListener("keydown", e => {
-  if (e.key === "Enter") send();
+  if (e.key === "Enter") {
+    e.preventDefault();
+    send();
+  }
 });
 
+let lastTyping = 0;
 msgInput.addEventListener("input", () => {
   const now = Date.now();
   if (now - lastTyping > 500) {
@@ -189,7 +226,6 @@ msgInput.addEventListener("input", () => {
   }
 });
 
-/* ===== EMOJI ===== */
 const emojis = ["😀","😂","😍","😎","😭","👍","🔥"];
 const picker = document.getElementById("emojiPicker");
 
@@ -201,16 +237,14 @@ emojis.forEach(e => {
 });
 
 document.getElementById("emojiBtn").onclick = () => {
-  picker.classList.toggle("hidden");
+  picker.classList.toggle("show");
 };
 
-/* ===== LOGOUT ===== */
 document.getElementById("logout").onclick = () => {
-  ws.close();
+  try { ws.close(); } catch(e) {}
   location.reload();
 };
 
-/* ===== THEME ===== */
 const toggleBtn = document.getElementById("themeToggle");
 const body = document.body;
 let isDark = true;
@@ -220,4 +254,35 @@ toggleBtn.onclick = () => {
   body.classList.toggle("dark", isDark);
   body.classList.toggle("light", !isDark);
   toggleBtn.innerText = isDark ? "🌙" : "☀️";
+};
+body.classList.add("dark");
+
+const kickModal = document.getElementById("kickModal");
+const kickTitle = document.getElementById("kickTitle");
+const kickConfirm = document.getElementById("kickConfirm");
+const kickCancel = document.getElementById("kickCancel");
+
+let kickTargetUser = null;
+
+function showKickModal(u) {
+  kickTargetUser = u;
+  kickTitle.innerText = "Kick " + u + " ?";
+  kickModal.classList.remove("hidden");
+}
+
+function hideKickModal() {
+  kickModal.classList.add("hidden");
+  kickTargetUser = null;
+}
+
+kickCancel.onclick = hideKickModal;
+
+kickConfirm.onclick = () => {
+  if (kickTargetUser) {
+    ws.send(JSON.stringify({
+      type: "kick",
+      user: kickTargetUser
+    }));
+  }
+  hideKickModal();
 };

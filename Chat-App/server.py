@@ -5,13 +5,12 @@ import time
 import random
 import string
 
-clients = {}   # ws -> {username, room}
-rooms = {}     # room -> {admin, clients:set()}
+clients = {}
+rooms = {}
 typing_status = {}
 banned_users = {}
 
 
-# ================== UTILS ==================
 def gen_room_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
@@ -24,7 +23,6 @@ def is_admin(ws):
     return rooms.get(room, {}).get("admin") == info["username"]
 
 
-# ================== BROADCAST ==================
 async def broadcast_room(room, message, except_ws=None):
     if room not in rooms:
         return
@@ -53,12 +51,10 @@ async def update_online(room):
         if w in clients
     ]
 
-    admin = rooms[room]["admin"]
-
     msg = json.dumps({
         "type": "online_list",
         "users": users,
-        "admin": admin
+        "admin": rooms[room]["admin"]
     })
 
     for w in list(rooms[room]["clients"]):
@@ -68,32 +64,28 @@ async def update_online(room):
             pass
 
 
-# ================== TYPING CLEANER ==================
 async def clear_typing():
     while True:
         now = time.time()
         for (room, user), t in list(typing_status.items()):
-            if now - t > 3:
+            if now - t > 1:
                 del typing_status[(room, user)]
                 await broadcast_room(room, json.dumps({
                     "type": "stop_typing",
                     "user": user
                 }))
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.2)
 
 
-# ================== HANDLER ==================
 async def handler(ws):
     try:
         async for msg in ws:
             data = json.loads(msg)
 
-            # ===== JOIN =====
             if data["type"] == "join":
                 username = data["username"]
                 room = data.get("room")
 
-                # tạo phòng nếu trống
                 if not room:
                     room = gen_room_code()
                     rooms[room] = {
@@ -114,7 +106,7 @@ async def handler(ws):
                         "message": "Bạn đã bị cấm khỏi phòng"
                     }))
                     await ws.close()
-                    return
+                    break
 
                 clients[ws] = {"username": username, "room": room}
                 rooms[room]["clients"].add(ws)
@@ -128,80 +120,118 @@ async def handler(ws):
                 await broadcast_room(room, json.dumps({
                     "type": "notification",
                     "text": f"{username} đã tham gia phòng"
-                }))
+                }), except_ws=ws)
 
                 await update_online(room)
 
-            # ===== MESSAGE (✔ thêm time) =====
             elif data["type"] == "message":
                 info = clients.get(ws)
-                if not info:
-                    continue
+                if info:
+                    await broadcast_room(info["room"], json.dumps({
+                        "type": "message",
+                        "from": info["username"],
+                        "text": data["text"],
+                        "time": time.time()
+                    }))
 
-                await broadcast_room(info["room"], json.dumps({
-                    "type": "message",
-                    "from": info["username"],
-                    "text": data["text"],
-                    "time": time.time()   # 🔥 timestamp
-                }))
-
-            # ===== TYPING =====
             elif data["type"] == "typing":
                 info = clients.get(ws)
-                if not info:
-                    continue
+                if info:
+                    typing_status[(info["room"], info["username"])] = time.time()
+                    await broadcast_room(
+                        info["room"],
+                        json.dumps({
+                            "type": "typing",
+                            "user": info["username"]
+                        }),
+                        except_ws=ws
+                    )
 
-                typing_status[(info["room"], info["username"])] = time.time()
-                await broadcast_room(
-                    info["room"],
-                    json.dumps({
-                        "type": "typing",
-                        "user": info["username"]
-                    }),
-                    except_ws=ws
-                )
-
-            # ===== KICK =====
             elif data["type"] == "kick":
                 if not is_admin(ws):
                     continue
 
-                target = data.get("user")
-                room = clients[ws]["room"]
+                info = clients.get(ws)
+                if not info:
+                    continue
 
+                room = info["room"]
+                target_name = data.get("user")
+
+                target_ws = None
                 for w in list(rooms[room]["clients"]):
-                    if clients.get(w, {}).get("username") == target:
-                        await w.send(json.dumps({
-                            "type": "notification",
-                            "text": "Bạn đã bị kick khỏi phòng"
-                        }))
-                        await w.close()
+                    i = clients.get(w)
+                    if i and i["username"] == target_name:
+                        target_ws = w
                         break
 
+                if not target_ws:
+                    continue
+
+                rooms[room]["clients"].discard(target_ws)
+                clients.pop(target_ws, None)
+                typing_status.pop((room, target_name), None)
+
+                try:
+                    await target_ws.send(json.dumps({
+                        "type": "kicked",
+                        "room": room
+                    }))
+                except:
+                    pass
+
+                await broadcast_room(room, json.dumps({
+                    "type": "notification",
+                    "text": f"{target_name} đã bị kick khỏi phòng"
+                }))
+
                 await update_online(room)
+
+                try:
+                    await target_ws.close()
+                except:
+                    pass
 
     except Exception as e:
         print("❌ Lỗi:", e)
 
     finally:
-        if ws in clients:
-            info = clients[ws]
+        info = clients.get(ws)
+
+        if info:
             room = info["room"]
             name = info["username"]
 
-            rooms[room]["clients"].discard(ws)
+            was_admin = rooms.get(room, {}).get("admin") == name
+
+            if room in rooms:
+                rooms[room]["clients"].discard(ws)
+
             clients.pop(ws, None)
             typing_status.pop((room, name), None)
 
-            await broadcast_room(room, json.dumps({
-                "type": "notification",
-                "text": f"{name} đã rời phòng"
-            }))
+            if room in rooms:
+                if not rooms[room]["clients"]:
+                    rooms.pop(room, None)
+                else:
+                    if was_admin:
+                        new_ws = random.choice(list(rooms[room]["clients"]))
+                        new_admin = clients[new_ws]["username"]
+                        rooms[room]["admin"] = new_admin
 
-            await update_online(room)
+                        await broadcast_room(room, json.dumps({
+                            "type": "notification",
+                            "text": f"{new_admin} đã trở thành chủ phòng mới 👑"
+                        }))
+
+                    await broadcast_room(room, json.dumps({
+                        "type": "notification",
+                        "text": f"{name} đã rời phòng"
+                    }))
+
+                    await update_online(room)
 
 
-# ================== MAIN ==================
 async def main():
     async with websockets.serve(handler, "localhost", 8765):
         print("✅ Server chạy tại ws://localhost:8765")
