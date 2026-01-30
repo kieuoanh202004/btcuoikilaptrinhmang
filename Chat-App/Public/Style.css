@@ -330,3 +330,18 @@ body.light button {
 .hidden {
     display: none;
 }
+.sender span[title] {
+  margin-left: 10px;
+  font-size: 0.8rem;
+  transition: transform 0.2s;
+}
+
+.sender span[title]:hover {
+  transform: scale(1.2);
+  color: #ff4d4d;
+}
+
+.message.deleted {
+  opacity: 0.5;
+  font-style: italic;
+}

@@ -31,19 +31,23 @@ const messages = document.getElementById("messages");
 const typingDiv = document.getElementById("typing");
 const onlineUsers = document.getElementById("onlineUsers");
 const notifications = document.getElementById("notifications");
+
 const imgBtn = document.getElementById("imgBtn");
 const imgInput = document.getElementById("imgInput");
 
 const replyBox = document.getElementById("replyBox");
 const replyText = document.getElementById("replyText");
 const cancelReply = document.getElementById("cancelReply");
+
 replyBox.classList.add("hidden");
 replyBox.style.display = "none";
 
+/* ===== STATE ===== */
 let typingTimeout;
 let lastTyping = 0;
-let replyMessage = null; // { from, text }
+let replyMessage = null;
 
+/* ===== UTILS ===== */
 function linkify(text) {
   const urlRegex = /((https?:\/\/|www\.)[^\s]+)/gi;
   return text.replace(urlRegex, url => {
@@ -51,45 +55,24 @@ function linkify(text) {
     if (!href.match(/^https?:\/\//i)) {
       href = "http://" + href;
     }
-    return `<a href="${href}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+    return `<a href="${href}" target="_blank">${url}</a>`;
   });
 }
 
+/* ===== RECEIVE MESSAGE ===== */
 ws.onmessage = e => {
   const data = JSON.parse(e.data);
 
   /* ----- TEXT MESSAGE ----- */
   if (data.type === "message") {
     const div = document.createElement("div");
-    div.className =
-      "message " + (data.from === username ? "me" : "other");
-    div.style.position = "relative"; // needed cho nút reply vị trí tuyệt đối
+    div.className = "message " + (data.from === username ? "me" : "other");
 
-    const replyBtn = document.createElement("button");
-    replyBtn.className = "reply-btn";
-    replyBtn.title = "Trả lời";
-    replyBtn.innerText = "↪";
-    replyBtn.onclick = (ev) => {
-      ev.stopPropagation();
+    // use server-provided msg_id when available so deletions are consistent
+    const msgId = data.msg_id || ("msg-" + (data.time || Date.now()));
+    div.id = msgId;
 
-      replyMessage = {
-        from: data.from,
-        text: data.text
-      };
-
-      replyText.innerText = `↪ ${data.from}: ${data.text}`;
-      replyBox.classList.remove("hidden");
-      replyBox.style.display = "flex"; // ensure visible
-      msgInput.focus();
-    };
-
-
-    /* SENDER */
-    const sender = document.createElement("div");
-    sender.className = "sender";
-    sender.innerText = data.from;
-    sender.style.color =
-      data.from === username ? "white" : getNameColor(data.from);
+    /* Reply preview */
     if (data.replyTo) {
       const replyPreview = document.createElement("div");
       replyPreview.className = "reply-preview";
@@ -97,12 +80,53 @@ ws.onmessage = e => {
         `↪ ${data.replyTo.from}: ${data.replyTo.text}`;
       div.appendChild(replyPreview);
     }
+
+    /* Sender */
+    const senderRow = document.createElement("div");
+    senderRow.className = "sender-row";
+
+    const sender = document.createElement("span");
+    sender.innerText = data.from;
+    sender.style.color =
+      data.from === username ? "#fff" : getNameColor(data.from);
+
+    senderRow.appendChild(sender);
+
+    /* Delete button (chỉ mình) */
+    if (data.from === username) {
+      const deleteBtn = document.createElement("span");
+      deleteBtn.innerText = " 🗑️";
+      deleteBtn.style.cursor = "pointer";
+      deleteBtn.onclick = () => {
+        if (confirm("Thu hồi tin nhắn?")) {
+          ws.send(JSON.stringify({
+            type: "delete_message",
+            msg_id: msgId
+          }));
+        }
+      };
+      senderRow.appendChild(deleteBtn);
+    }
+
+    /* Text */
     const text = document.createElement("div");
     text.className = "text";
     text.dataset.raw = data.text;
     text.innerHTML = linkify(data.text);
 
-    div.appendChild(sender);
+    /* Reply button */
+    const replyBtn = document.createElement("button");
+    replyBtn.className = "reply-btn";
+    replyBtn.innerText = "↪";
+    replyBtn.onclick = () => {
+      replyMessage = { from: data.from, text: data.text };
+      replyText.innerText = `↪ ${data.from}: ${data.text}`;
+      replyBox.classList.remove("hidden");
+      replyBox.style.display = "flex";
+      msgInput.focus();
+    };
+
+    div.appendChild(senderRow);
     div.appendChild(text);
     div.appendChild(replyBtn);
 
@@ -110,40 +134,67 @@ ws.onmessage = e => {
     messages.scrollTop = messages.scrollHeight;
   }
 
+  /* ----- IMAGE ----- */
   if (data.type === "image") {
     const div = document.createElement("div");
-    div.className =
-      "message " + (data.from === username ? "me" : "other");
+    div.className = "message " + (data.from === username ? "me" : "other");
+
+    // use server-provided msg_id when available
+    const msgId = data.msg_id || ("msg-" + (data.time || Date.now()));
+    div.id = msgId;
 
     const sender = document.createElement("div");
     sender.className = "sender";
     sender.innerText = data.from;
     sender.style.color =
-      data.from === username ? "white" : getNameColor(data.from);
+      data.from === username ? "#fff" : getNameColor(data.from);
 
     const img = document.createElement("img");
     img.src = data.data;
-    img.alt = data.filename || "image";
-
-    const caption = document.createElement("div");
-    caption.className = "image-caption";
-    caption.innerText = data.filename || "";
 
     div.appendChild(sender);
     div.appendChild(img);
-    if (caption.innerText) div.appendChild(caption);
+
+    // allow owner to delete images as well
+    if (data.from === username) {
+      const deleteBtn = document.createElement("span");
+      deleteBtn.innerText = " 🗑️";
+      deleteBtn.style.cursor = "pointer";
+      deleteBtn.onclick = () => {
+        if (confirm("Thu hồi hình ảnh?")) {
+          ws.send(JSON.stringify({ type: "delete_message", msg_id: msgId }));
+        }
+      };
+      // place delete button after sender
+      sender.appendChild(deleteBtn);
+    }
 
     messages.appendChild(div);
     messages.scrollTop = messages.scrollHeight;
+  }
+
+  /* ----- DELETE ----- */
+  if (data.type === "delete_message") {
+    const target = document.getElementById(data.msg_id);
+    if (target) {
+      // mark the message as deleted and replace its content with a placeholder
+      target.classList.add('deleted');
+
+      // Remove any interactive controls (reply/delete buttons, images, etc.)
+      // and show a consistent placeholder text for recalled messages.
+      target.innerHTML = '';
+      const notice = document.createElement('div');
+      notice.className = 'text';
+      notice.innerText = 'Tin nhắn đã được thu hồi';
+      target.appendChild(notice);
+    }
   }
 
   /* ----- TYPING ----- */
   if (data.type === "typing" && data.user !== username) {
     typingDiv.innerText = `${data.user} đang nhập...`;
     clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => {
-      typingDiv.innerText = "";
-    }, 2000);
+    typingTimeout = setTimeout(() => typingDiv.innerText = "", 2000);
   }
 
   /* ----- ONLINE LIST ----- */
@@ -151,13 +202,12 @@ ws.onmessage = e => {
     onlineUsers.innerHTML = "";
     data.users.forEach(u => {
       const d = document.createElement("div");
-      d.className = "online";
       d.innerHTML = `<div class="dot"></div>${u}`;
       onlineUsers.appendChild(d);
     });
   }
 
-  /* ----- NOTIFICATION ----- */
+  /* ----- NOTIFY ----- */
   if (data.type === "notification") {
     const n = document.createElement("div");
     n.innerText = data.text;
@@ -165,6 +215,7 @@ ws.onmessage = e => {
   }
 };
 
+/* ===== SEND MESSAGE ===== */
 function send() {
   const text = msgInput.value.trim();
   if (!text) return;
@@ -181,12 +232,8 @@ function send() {
   replyBox.style.display = "none";
 }
 
-
 document.getElementById("send").onclick = send;
-
-msgInput.addEventListener("keydown", e => {
-  if (e.key === "Enter") send();
-});
+msgInput.addEventListener("keydown", e => e.key === "Enter" && send());
 
 /* ===== TYPING EVENT ===== */
 msgInput.addEventListener("input", () => {
@@ -197,10 +244,10 @@ msgInput.addEventListener("input", () => {
   }
 });
 
+/* ===== IMAGE SEND ===== */
 imgBtn.onclick = () => imgInput.click();
-
-imgInput.addEventListener("change", () => {
-  const file = imgInput.files && imgInput.files[0];
+imgInput.onchange = () => {
+  const file = imgInput.files[0];
   if (!file) return;
 
   const reader = new FileReader();
@@ -212,9 +259,9 @@ imgInput.addEventListener("change", () => {
     }));
   };
   reader.readAsDataURL(file);
-  imgInput.value = "";
-});
+};
 
+/* ===== EMOJI ===== */
 const emojis = ["😀","😂","😍","😎","😭","👍","🔥"];
 const picker = document.getElementById("emojiPicker");
 
@@ -225,55 +272,35 @@ emojis.forEach(e => {
   picker.appendChild(s);
 });
 
-document.getElementById("emojiBtn").onclick = () => {
+document.getElementById("emojiBtn").onclick = () =>
   picker.classList.toggle("hidden");
-};
 
+/* ===== CANCEL REPLY ===== */
 cancelReply.onclick = () => {
   replyMessage = null;
   replyBox.classList.add("hidden");
   replyBox.style.display = "none";
 };
 
+/* ===== SEARCH ===== */
+const searchInput = document.getElementById("searchInput");
+searchInput.oninput = () => {
+  const k = searchInput.value.toLowerCase();
+  document.querySelectorAll(".text").forEach(t => {
+    const raw = t.dataset.raw;
+    if (!k) {
+      t.innerText = raw;
+    } else if (raw.toLowerCase().includes(k)) {
+      t.innerHTML = raw.replace(
+        new RegExp(`(${k})`, "gi"),
+        `<span class="highlight">$1</span>`
+      );
+    }
+  });
+};
 
 /* ===== LOGOUT ===== */
 document.getElementById("logout").onclick = () => {
   ws.close();
   location.reload();
 };
-
-/* ===== THEME ===== */
-const toggleBtn = document.getElementById("themeToggle");
-const body = document.body;
-let isDark = true;
-
-toggleBtn.onclick = () => {
-  isDark = !isDark;
-  body.classList.toggle("dark", isDark);
-  body.classList.toggle("light", !isDark);
-  toggleBtn.innerText = isDark ? "🌙" : "☀️";
-};
-
-const searchInput = document.getElementById("searchInput");
-
-searchInput.addEventListener("input", () => {
-  const keyword = searchInput.value.toLowerCase().trim();
-  const allMessages =
-    document.querySelectorAll("#messages .message .text");
-
-  allMessages.forEach(msg => {
-    const raw = msg.dataset.raw;
-    if (!keyword) {
-      msg.innerText = raw;
-      return;
-    }
-    if (raw.toLowerCase().includes(keyword)) {
-      msg.innerHTML = raw.replace(
-        new RegExp(`(${keyword})`, "gi"),
-        `<span class="highlight">$1</span>`
-      );
-    } else {
-      msg.innerText = raw;
-    }
-  });
-});
