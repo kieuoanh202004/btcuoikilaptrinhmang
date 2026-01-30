@@ -138,6 +138,26 @@ button {
   margin: 12px 0;
   font-size: 1.1rem;
   line-height: 1.6;
+  word-wrap: break-word;
+  position: relative; /* cho nút reply */
+}
+
+.message img {
+  display: block;
+  max-width: 320px;
+  max-height: 320px;
+  width: auto;
+  height: auto;
+  border-radius: 12px;
+  margin-top: 8px;
+  object-fit: cover;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.image-caption {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  opacity: 0.85;
 }
 
 .me {
@@ -164,6 +184,27 @@ button {
 }
 
 /* ===== RIGHT: ONLINE ===== */
+.input-area {
+  display: flex;
+  gap: 16px;
+  padding-top: 16px;
+  align-items: center;
+}
+
+input {
+  flex: 1;
+  padding: 18px 20px;
+  font-size: 1.1rem;
+  border-radius: 16px;
+  border: none;
+}
+
+#imgBtn {
+  padding: 12px 14px;
+  font-size: 1rem;
+  background: rgba(255,255,255,0.06);
+}
+
 .sidebar {
   flex: 1.4;
   padding: 30px;
@@ -297,6 +338,116 @@ button {
   gap: 6px;
 }
 
+.search-box {
+  flex: none;
+  width: 180px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  margin-left: 20px;
+  border-radius: 20px;
+  transition: width 0.3s ease;
+}
+
+.search-box:focus {
+  width: 250px;
+  outline: none;
+  box-shadow: 0 0 5px rgba(56, 131, 216, 0.5);
+}
+
+
+.highlight {
+  background-color: #ffeb3b;
+  color: #000;
+  border-radius: 4px;
+  padding: 0 2px;
+  font-weight: bold;
+}
+.reply-box {
+  background: rgba(255,255,255,0.1);
+  border-left: 4px solid #38bdf8;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  display: none; /* hidden by default */
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.reply-box:not(.hidden) {
+  display: flex;
+}
+
+.reply-box button {
+  background: none;
+  color: #f87171;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.reply-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255,255,255,0.06);
+  color: inherit;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+  pointer-events: none;
+}
+
+.message:hover .reply-btn {
+  opacity: 0.9;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto; /* cho phép click khi hiện */
+}
+
+.reply-btn:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+.reply-preview {
+  background: rgba(0,0,0,0.12);
+  padding: 8px 10px;
+  border-left: 3px solid #38bdf8;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+.input-wrapper {
+  position: relative;
+}
+
+.reply-box {
+  position: absolute;
+  bottom: 70px;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+.sender span[title] {
+  margin-left: 10px;
+  font-size: 0.8rem;
+  transition: transform 0.2s;
+}
+
+.sender span[title]:hover {
+  transform: scale(1.2);
+  color: #ff4d4d;
+}
+
+.message.deleted {
+  opacity: 0.5;
+  font-style: italic;
+}
 /* icon admin sát tên và to */
 .admin-icon {
   font-size: 1.1rem;

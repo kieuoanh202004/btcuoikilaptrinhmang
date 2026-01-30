@@ -4,11 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chat Realtime</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="Style.css">
 </head>
-<body class="dark">
 
+<body class="dark">
 <div class="app">
+  <div class="chat-box">
+    <div class="header">
+      <button id="logout" class="logout-btn">Thoát</button>
+      <div class="group-name">Nhóm xào xáo</div>
 
   <aside class="rooms">
     <h3>Phòng chat</h3>
@@ -27,6 +31,47 @@
       </div>
     </div>
 
+      <input
+        id="searchInput"
+        placeholder="🔍 Tìm tin nhắn..."
+        class="search-box"
+      />
+
+      <button id="themeToggle" class="theme-btn">🌙</button>
+    </div>
+    <div id="messages"></div>
+    <div id="typing"></div>
+    <div class="input-wrapper">
+      <div id="replyBox" class="reply-box hidden">
+        <span id="replyText">↪ Reply</span>
+        <button id="cancelReply">✖</button>
+      </div>
+      <div class="input-area">
+        <button id="emojiBtn">😄</button>
+        <input
+          id="msg"
+          placeholder="Nhập tin nhắn..."
+          autocomplete="off"
+        />
+        <button id="send">Gửi</button>
+        <button id="imgBtn">📷</button>
+        <input
+          id="imgInput"
+          type="file"
+          accept="image/*"
+          class="hidden"
+        />
+      </div>
+
+    </div>
+    <div id="emojiPicker" class="hidden"></div>
+  </div>
+  <div class="sidebar">
+    <h3>Online</h3>
+    <div id="onlineUsers"></div>
+    <h3>Thông báo</h3>
+    <div id="notifications"></div>
+  </div>
     <div id="messages">
       </div>
 

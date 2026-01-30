@@ -4,9 +4,15 @@ import json
 import time
 import random
 import string
+import uuid
 
 clients = {}   # ws -> {username, room}
 rooms = {}     # room -> {admin, clients:set()}
+clients = {}
+
+# map msg_id -> username (owner) so we can authorize deletes
+messages = {}
+
 typing_status = {}
 banned_users = {}
 
@@ -134,12 +140,37 @@ async def handler(ws):
 
             # ===== MESSAGE (✔ thêm time) =====
             elif data["type"] == "message":
+                # generate a stable msg_id and record the owner
+                msg_id = "msg-" + uuid.uuid4().hex
+                owner = clients.get(websocket, "Unknown")
+                messages[msg_id] = owner
+
+                await broadcast(json.dumps({
                 info = clients.get(ws)
                 if not info:
                     continue
 
                 await broadcast_room(info["room"], json.dumps({
                     "type": "message",
+                    "from": owner,
+                    "text": data["text"],
+                    "replyTo": data.get("replyTo"),
+                    "msg_id": msg_id,
+                    "time": int(time.time() * 1000)
+                }))
+
+            elif data["type"] == "image":
+                msg_id = "msg-" + uuid.uuid4().hex
+                owner = clients.get(websocket, "Unknown")
+                messages[msg_id] = owner
+
+                await broadcast(json.dumps({
+                    "type": "image",
+                    "from": owner,
+                    "filename": data.get("filename"),
+                    "data": data.get("data"),
+                    "msg_id": msg_id,
+                    "time": int(time.time() * 1000)
                     "from": info["username"],
                     "text": data["text"],
                     "time": time.time()   # 🔥 timestamp
@@ -180,6 +211,26 @@ async def handler(ws):
 
                 await update_online(room)
 
+            elif data["type"] == "delete_message":
+                msg_id = data.get("msg_id")
+                requester = clients.get(websocket)
+                if not msg_id or not requester:
+                    continue
+
+                # only the owner can delete their message
+                owner = messages.get(msg_id)
+                if owner and owner == requester:
+                    # remove stored message and notify all clients to delete it
+                    messages.pop(msg_id, None)
+                    await broadcast(json.dumps({
+                        "type": "delete_message",
+                        "msg_id": msg_id
+                    }))
+                else:
+                    # ignore or optionally send an error back to requester
+                    pass
+
+
     except Exception as e:
         print("❌ Lỗi:", e)
 
@@ -194,6 +245,12 @@ async def handler(ws):
             typing_status.pop((room, name), None)
 
             await broadcast_room(room, json.dumps({
+            # cleanup any messages owned by this websocket's username
+            for mid, owner in list(messages.items()):
+                if owner == name:
+                    messages.pop(mid, None)
+
+            await broadcast(json.dumps({
                 "type": "notification",
                 "text": f"{name} đã rời phòng"
             }))
