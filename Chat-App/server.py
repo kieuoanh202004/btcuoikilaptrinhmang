@@ -2,8 +2,12 @@ import asyncio
 import websockets
 import json
 import time
+import uuid
 
 clients = {}
+
+# map msg_id -> username (owner) so we can authorize deletes
+messages = {}
 
 typing_status = {}
 
@@ -62,19 +66,32 @@ async def handler(websocket):
                 }))
 
             elif data["type"] == "message":
+                # generate a stable msg_id and record the owner
+                msg_id = "msg-" + uuid.uuid4().hex
+                owner = clients.get(websocket, "Unknown")
+                messages[msg_id] = owner
+
                 await broadcast(json.dumps({
                     "type": "message",
-                    "from": clients.get(websocket, "Unknown"),
+                    "from": owner,
                     "text": data["text"],
-                    "replyTo": data.get("replyTo")
+                    "replyTo": data.get("replyTo"),
+                    "msg_id": msg_id,
+                    "time": int(time.time() * 1000)
                 }))
 
             elif data["type"] == "image":
+                msg_id = "msg-" + uuid.uuid4().hex
+                owner = clients.get(websocket, "Unknown")
+                messages[msg_id] = owner
+
                 await broadcast(json.dumps({
                     "type": "image",
-                    "from": clients.get(websocket, "Unknown"),
+                    "from": owner,
                     "filename": data.get("filename"),
-                    "data": data.get("data")
+                    "data": data.get("data"),
+                    "msg_id": msg_id,
+                    "time": int(time.time() * 1000)
                 }))
 
             elif data["type"] == "typing":
@@ -86,6 +103,25 @@ async def handler(websocket):
                         "user": user
                     }))
 
+            elif data["type"] == "delete_message":
+                msg_id = data.get("msg_id")
+                requester = clients.get(websocket)
+                if not msg_id or not requester:
+                    continue
+
+                # only the owner can delete their message
+                owner = messages.get(msg_id)
+                if owner and owner == requester:
+                    # remove stored message and notify all clients to delete it
+                    messages.pop(msg_id, None)
+                    await broadcast(json.dumps({
+                        "type": "delete_message",
+                        "msg_id": msg_id
+                    }))
+                else:
+                    # ignore or optionally send an error back to requester
+                    pass
+
 
     except Exception as e:
         print("❌ Lỗi WebSocket:", e)
@@ -95,6 +131,11 @@ async def handler(websocket):
             name = clients[websocket]
             del clients[websocket]
             typing_status.pop(name, None)
+
+            # cleanup any messages owned by this websocket's username
+            for mid, owner in list(messages.items()):
+                if owner == name:
+                    messages.pop(mid, None)
 
             await broadcast(json.dumps({
                 "type": "notification",
