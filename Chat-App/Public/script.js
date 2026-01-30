@@ -45,7 +45,6 @@ function ask(text, callback) {
 
 ask("Nhập tên của bạn", name => {
   username = name;
-
   ask("Nhập mã phòng (để trống để tạo phòng mới)", r => {
     room = r || null;
     if (ws.readyState === WebSocket.OPEN) joinRoom();
@@ -57,6 +56,9 @@ ws.onopen = () => {
 };
 
 let isAdmin = false;
+let replyMessage = null;
+let typingTimeout;
+let lastTyping = 0;
 let currentAdmin = null;
 
 const msgInput = document.getElementById("msg");
@@ -65,6 +67,13 @@ const typingDiv = document.getElementById("typing");
 const onlineUsers = document.getElementById("onlineUsers");
 const notifications = document.getElementById("notifications");
 const roomCodeEl = document.getElementById("roomCode");
+
+const imgBtn = document.getElementById("imgBtn");
+const imgInput = document.getElementById("imgInput");
+
+const replyBox = document.getElementById("replyBox");
+const replyText = document.getElementById("replyText");
+const cancelReply = document.getElementById("cancelReply");
 
 function joinRoom() {
   if (ws.readyState !== WebSocket.OPEN) return;
@@ -76,23 +85,31 @@ function joinRoom() {
   }));
 }
 
+/* ===== TIME ===== */
 function formatTime(ts) {
-  const d = new Date(ts * 1000);
-  return d.toLocaleTimeString("vi-VN", {
+  return new Date(ts * 1000).toLocaleTimeString("vi-VN", {
     hour: "2-digit",
     minute: "2-digit"
   });
 }
 
+/* ===== LINKIFY ===== */
+function linkify(text) {
+  return text.replace(/((https?:\/\/|www\.)[^\s]+)/gi, url => {
+    const href = url.startsWith("http") ? url : "http://" + url;
+    return `<a href="${href}" target="_blank">${url}</a>`;
+  });
+}
+
+/* ===== RECEIVE ===== */
 ws.onmessage = e => {
   const data = JSON.parse(e.data);
 
+  /* ROOM */
   if (data.type === "room_joined") {
     roomCodeEl.innerText = "🔑 " + data.room;
-
     currentAdmin = data.admin;
     isAdmin = currentAdmin === username;
-
     messages.innerHTML = "";
     notifications.innerHTML = "";
     typingDiv.innerText = "";
@@ -106,53 +123,118 @@ ws.onmessage = e => {
     notifications.innerHTML = "";
     typingDiv.innerText = "";
     roomCodeEl.innerText = "";
-
     try { ws.close(); } catch(e) {}
     setTimeout(() => location.reload(), 100);
     return;
   }
 
+  /* ===== TEXT MESSAGE ===== */
   if (data.type === "message") {
     const div = document.createElement("div");
     div.className = "message " + (data.from === username ? "me" : "other");
+    const msgId = data.msg_id || ("msg-" + Date.now());
+    div.id = msgId;
 
     const senderRow = document.createElement("div");
-    senderRow.className = "sender";
+    senderRow.className = "sender-row";
 
     const sender = document.createElement("span");
     sender.innerText = data.from;
     sender.style.color =
-      data.from === username ? "white" : getNameColor(data.from);
-
-    const time = document.createElement("span");
-    time.style.marginLeft = "8px";
-    time.style.fontSize = "0.8rem";
-    time.style.opacity = "0.7";
-    time.innerText = formatTime(data.time);
-
+      data.from === username ? "#fff" : getNameColor(data.from);
     senderRow.appendChild(sender);
-    senderRow.appendChild(time);
+
+    if (data.replyTo) {
+      const rp = document.createElement("div");
+      rp.className = "reply-preview";
+      rp.innerText = `↪ ${data.replyTo.from}: ${data.replyTo.text}`;
+      div.appendChild(rp);
+    }
+
+    if (data.from === username) {
+      const del = document.createElement("span");
+      del.innerText = " 🗑️";
+      del.style.cursor = "pointer";
+      del.onclick = () =>
+        ws.send(JSON.stringify({ type: "delete_message", msg_id: msgId }));
+      senderRow.appendChild(del);
+    }
 
     const text = document.createElement("div");
-    text.innerText = data.text;
+    text.className = "text";
+    text.dataset.raw = data.text;
+    text.innerHTML = linkify(data.text);
 
-    div.appendChild(senderRow);
-    div.appendChild(text);
+    const replyBtn = document.createElement("button");
+    replyBtn.className = "reply-btn";
+    replyBtn.innerText = "↪";
+    replyBtn.onclick = () => {
+      replyMessage = { from: data.from, text: data.text };
+      replyText.innerText = `↪ ${data.from}: ${data.text}`;
+      replyBox.classList.remove("hidden");
+      msgInput.focus();
+    };
+
+    div.append(senderRow, text, replyBtn);
     messages.appendChild(div);
     messages.scrollTop = messages.scrollHeight;
   }
 
+  /* ===== IMAGE ===== */
+  if (data.type === "image") {
+    const div = document.createElement("div");
+    div.className = "message " + (data.from === username ? "me" : "other");
+    div.id = data.msg_id || ("img-" + Date.now());
+
+    const senderRow = document.createElement("div");
+    senderRow.className = "sender-row";
+
+    const sender = document.createElement("span");
+    sender.innerText = data.from;
+    sender.style.color =
+      data.from === username ? "#fff" : getNameColor(data.from);
+    senderRow.appendChild(sender);
+
+    if (data.from === username) {
+      const del = document.createElement("span");
+      del.innerText = " 🗑️";
+      del.style.cursor = "pointer";
+      del.onclick = () =>
+        ws.send(JSON.stringify({ type: "delete_message", msg_id: div.id }));
+      senderRow.appendChild(del);
+    }
+
+    const img = document.createElement("img");
+    img.src = data.data;
+
+    div.append(senderRow, img);
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  /* ===== DELETE ===== */
+  if (data.type === "delete_message") {
+    const target = document.getElementById(data.msg_id);
+    if (target) {
+      target.innerHTML = `<div class="text">Tin nhắn đã được thu hồi</div>`;
+      target.classList.add("deleted");
+    }
+  }
+
+  /* ===== TYPING ===== */
   if (data.type === "typing" && data.user !== username) {
     typingDiv.innerText = `${data.user} đang nhập...`;
   }
 
   if (data.type === "stop_typing") {
     typingDiv.innerText = "";
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => typingDiv.innerText = "", 2000);
   }
 
+  /* ===== ONLINE ===== */
   if (data.type === "online_list") {
     onlineUsers.innerHTML = "";
-
     currentAdmin = data.admin;
     isAdmin = currentAdmin === username;
 
@@ -164,7 +246,6 @@ ws.onmessage = e => {
       dot.className = "dot";
 
       const name = document.createElement("span");
-      name.className = "username";
       name.innerText = u;
 
       row.appendChild(dot);
@@ -173,7 +254,6 @@ ws.onmessage = e => {
       if (u === currentAdmin) {
         const crown = document.createElement("span");
         crown.innerText = " 👑";
-        crown.className = "admin";
         row.appendChild(crown);
       }
 
@@ -181,14 +261,15 @@ ws.onmessage = e => {
         const kickBtn = document.createElement("button");
         kickBtn.innerText = "Kick";
         kickBtn.className = "kick-btn";
-        kickBtn.onclick = () => showKickModal(u);
+        kickBtn.onclick = () =>
+          ws.send(JSON.stringify({ type: "kick", user: u }));
         row.appendChild(kickBtn);
       }
-
       onlineUsers.appendChild(row);
     });
   }
 
+  /* ===== NOTIFY ===== */
   if (data.type === "notification") {
     const n = document.createElement("div");
     n.innerText = data.text;
@@ -196,20 +277,20 @@ ws.onmessage = e => {
   }
 };
 
+/* ===== SEND ===== */
 function send() {
-  const text = msgInput.value.trim();
-  if (!text) return;
-
+  if (!msgInput.value.trim()) return;
   ws.send(JSON.stringify({
     type: "message",
-    text
+    text: msgInput.value,
+    replyTo: replyMessage
   }));
-
   msgInput.value = "";
+  replyMessage = null;
+  replyBox.classList.add("hidden");
 }
 
 document.getElementById("send").onclick = send;
-
 msgInput.addEventListener("keydown", e => {
   if (e.key === "Enter") {
     e.preventDefault();
@@ -217,72 +298,86 @@ msgInput.addEventListener("keydown", e => {
   }
 });
 
-let lastTyping = 0;
+/* ===== TYPING SEND ===== */
 msgInput.addEventListener("input", () => {
   const now = Date.now();
   if (now - lastTyping > 500) {
     ws.send(JSON.stringify({ type: "typing" }));
-    lastTyping = now;
+    lastTyping = Date.now();
   }
 });
 
-const emojis = ["😀","😂","😍","😎","😭","👍","🔥"];
+/* ===== IMAGE SEND ===== */
+if (imgBtn && imgInput) {
+  imgBtn.onclick = () => imgInput.click();
+  imgInput.onchange = () => {
+    const file = imgInput.files[0];
+    if (!file) return;
+    const r = new FileReader();
+    r.onload = () =>
+      ws.send(JSON.stringify({ type: "image", data: r.result }));
+    r.readAsDataURL(file);
+  };
+}
+
+/* ===== EMOJI ===== */
 const picker = document.getElementById("emojiPicker");
+if (picker) {
+  const emojis = ["😀","😂","😍","😎","😭","👍","🔥"];
+  emojis.forEach(e => {
+    const s = document.createElement("span");
+    s.innerText = e;
+    s.onclick = () => {
+      msgInput.value += e;
+      msgInput.focus();
+    };
+    picker.appendChild(s);
+  });
 
-emojis.forEach(e => {
-  const s = document.createElement("span");
-  s.innerText = e;
-  s.onclick = () => msgInput.value += e;
-  picker.appendChild(s);
-});
+  document.getElementById("emojiBtn").onclick = () => {
+    picker.classList.toggle("show");
+  };
+}
 
-document.getElementById("emojiBtn").onclick = () => {
-  picker.classList.toggle("show");
+/* ===== CANCEL REPLY ===== */
+cancelReply.onclick = () => {
+  replyMessage = null;
+  replyBox.classList.add("hidden");
 };
 
+/* ===== SEARCH ===== */
+document.getElementById("searchInput").addEventListener("input", e => {
+  const k = e.target.value.toLowerCase();
+  document.querySelectorAll(".text").forEach(t => {
+    const raw = t.dataset.raw || "";
+    if (!k) {
+      t.innerHTML = linkify(raw);
+    } else {
+      const highlighted = raw.replace(
+        new RegExp(k, "gi"),
+        m => `<span class="highlight">${m}</span>`
+      );
+      t.innerHTML = linkify(highlighted);
+    }
+  });
+});
+
+/* ===== LOGOUT ===== */
 document.getElementById("logout").onclick = () => {
-  try { ws.close(); } catch(e) {}
+  ws.close();
   location.reload();
 };
 
+/* ===== THEME ===== */
 const toggleBtn = document.getElementById("themeToggle");
-const body = document.body;
-let isDark = true;
+if (toggleBtn) {
+  const body = document.body;
+  let isDark = true;
 
-toggleBtn.onclick = () => {
-  isDark = !isDark;
-  body.classList.toggle("dark", isDark);
-  body.classList.toggle("light", !isDark);
-  toggleBtn.innerText = isDark ? "🌙" : "☀️";
-};
-body.classList.add("dark");
-
-const kickModal = document.getElementById("kickModal");
-const kickTitle = document.getElementById("kickTitle");
-const kickConfirm = document.getElementById("kickConfirm");
-const kickCancel = document.getElementById("kickCancel");
-
-let kickTargetUser = null;
-
-function showKickModal(u) {
-  kickTargetUser = u;
-  kickTitle.innerText = "Kick " + u + " ?";
-  kickModal.classList.remove("hidden");
+  toggleBtn.onclick = () => {
+    isDark = !isDark;
+    body.classList.toggle("dark", isDark);
+    body.classList.toggle("light", !isDark);
+    toggleBtn.innerText = isDark ? "🌙" : "☀️";
+  };
 }
-
-function hideKickModal() {
-  kickModal.classList.add("hidden");
-  kickTargetUser = null;
-}
-
-kickCancel.onclick = hideKickModal;
-
-kickConfirm.onclick = () => {
-  if (kickTargetUser) {
-    ws.send(JSON.stringify({
-      type: "kick",
-      user: kickTargetUser
-    }));
-  }
-  hideKickModal();
-};

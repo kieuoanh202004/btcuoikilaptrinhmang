@@ -1,18 +1,17 @@
 :root {
   --primary: #3b82f6;
   --primary-dark: #2563eb;
-
   --bg-dark: #0f172a;
   --card-dark: #1e293b;
-
   --bg-light: #f4f6f8;
   --card-light: #ffffff;
-
   --text-dark: #e5e7eb;
   --text-light: #111827;
 }
 
-html { font-size: 14px; }
+html {
+  font-size: 14px;
+}
 
 body {
   margin: 0;
@@ -21,12 +20,12 @@ body {
 
 /* ================= THEME ================= */
 .dark {
-  background: linear-gradient(180deg,#4f5a74,#020617);
+  background: linear-gradient(180deg, #4f5a74, #020617);
   color: var(--text-dark);
 }
 
 .light {
-  background: linear-gradient(180deg,#c8ccd6,#5c5d63);
+  background: linear-gradient(180deg, #c8ccd6, #5c5d63);
   color: var(--text-light);
 }
 
@@ -42,7 +41,7 @@ body {
 .sidebar {
   border-radius: 22px;
   margin: 18px;
-  box-shadow: 0 18px 40px rgba(0,0,0,0.25);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
 }
 
 .rooms {
@@ -60,7 +59,7 @@ body {
   border-radius: 14px;
   margin-bottom: 10px;
   cursor: pointer;
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .room-item.active {
@@ -76,11 +75,11 @@ body {
   display: flex;
   flex-direction: column;
   position: relative;
-  background: linear-gradient(180deg,#1f2937,#020617);
+  background: linear-gradient(180deg, #1f2937, #020617);
 }
 
 .light .chat-box {
-  background: linear-gradient(180deg,#e5e7eb,#f8fafc);
+  background: linear-gradient(180deg, #e5e7eb, #f8fafc);
 }
 
 /* ===== HEADER ===== */
@@ -90,7 +89,7 @@ body {
   gap: 24px;
   padding-bottom: 12px;
   font-size: 1.3rem;
-  border-bottom: 1px solid rgba(255,255,255,0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .group-name {
@@ -119,12 +118,12 @@ button {
 
 .theme-btn {
   margin-left: auto;
-  background: rgba(255,255,255,0.12);
+  background: rgba(255, 255, 255, 0.12);
   font-size: 1.2rem;
 }
 
 .theme-btn:hover {
-  background: rgba(255,255,255,0.22);
+  background: rgba(255, 255, 255, 0.22);
 }
 
 /* ===== MESSAGE LIST ===== */
@@ -138,16 +137,35 @@ button {
 .message {
   width: fit-content;
   max-width: 80%;
-  padding: 16px 20px;
-  border-radius: 20px;
-  margin: 10px 0;
-  font-size: 1rem;
-  line-height: 1.5;
-  word-break: break-word;
+  padding: 20px 24px;
+  border-radius: 22px;
+  margin: 12px 0;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  word-wrap: break-word;
+  position: relative;
+}
+
+.message img {
+  display: block;
+  max-width: 320px;
+  max-height: 320px;
+  width: auto;
+  height: auto;
+  border-radius: 12px;
+  margin-top: 8px;
+  object-fit: cover;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.image-caption {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  opacity: 0.85;
 }
 
 .me {
-  background: linear-gradient(135deg,#3b82f6,#2563eb);
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   margin-left: auto;
   color: white;
 }
@@ -163,10 +181,13 @@ button {
   border: 1px solid #e5e7eb;
 }
 
-.sender {
+.sender-row {
   font-size: 0.9rem;
   font-weight: bold;
   margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* ===== TYPING ===== */
@@ -178,12 +199,33 @@ button {
 }
 
 /* ===== RIGHT: ONLINE ===== */
+.input-area {
+  display: flex;
+  gap: 16px;
+  padding-top: 16px;
+  align-items: center;
+}
+
+input {
+  flex: 1;
+  padding: 18px 20px;
+  font-size: 1.1rem;
+  border-radius: 16px;
+  border: none;
+}
+
+#imgBtn {
+  padding: 12px 14px;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.06);
+}
+
 .sidebar {
   flex: 1.4;
   padding: 30px;
   font-size: 1.05rem;
-  background: rgba(255,255,255,0.05);
-  border-left: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255, 255, 255, 0.05);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .light .sidebar {
@@ -211,15 +253,124 @@ button {
   box-shadow: 0 0 6px #22c55e;
 }
 
-.username {
-  flex: 1;
-  font-size: 1rem;
-  font-weight: 600;
+.search-box {
+  flex: none;
+  width: 180px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  margin-left: 20px;
+  border-radius: 20px;
+  transition: width 0.3s ease;
 }
 
-.admin {
-  color: gold;
+.search-box:focus {
+  width: 250px;
+  outline: none;
+  box-shadow: 0 0 5px rgba(56, 131, 216, 0.5);
+}
+
+.highlight {
+  background-color: #ffeb3b;
+  color: #000;
+  border-radius: 4px;
+  padding: 0 2px;
+  font-weight: bold;
+}
+
+.reply-box {
+  background: rgba(255, 255, 255, 0.1);
+  border-left: 4px solid #38bdf8;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  display: none;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.reply-box:not(.hidden) {
+  display: flex;
+}
+
+.reply-box button {
+  background: none;
+  color: #f87171;
   font-size: 1rem;
+  cursor: pointer;
+}
+
+.reply-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+  pointer-events: none;
+}
+
+.message:hover .reply-btn {
+  opacity: 0.9;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.reply-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.reply-preview {
+  background: rgba(0, 0, 0, 0.12);
+  padding: 8px 10px;
+  border-left: 3px solid #38bdf8;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.reply-box {
+  position: absolute;
+  bottom: 70px;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+.sender-row span[title] {
+  margin-left: 10px;
+  font-size: 0.8rem;
+  transition: transform 0.2s;
+}
+
+.sender-row span[title]:hover {
+  transform: scale(1.2);
+  color: #ff4d4d;
+}
+
+.message.deleted {
+  opacity: 0.5;
+  font-style: italic;
+}
+
+/* icon admin sát tên và to */
+.admin {
+  font-size: 1.1rem;
+  margin-left: 2px;
+  color: gold;
 }
 
 /* ===== KICK BUTTON ===== */
@@ -241,7 +392,7 @@ button {
   align-items: center;
   gap: 12px;
   padding: 14px 18px;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .input-wrapper {
@@ -265,7 +416,7 @@ button {
 }
 
 #msg::placeholder {
-  color: rgba(255,255,255,0.5);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .light #msg {
@@ -285,13 +436,12 @@ button {
   font-size: 1.25rem;
 }
 
-
 /* send button */
-#send.send-btn {
+#send {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: linear-gradient(135deg,#3b82f6,#2563eb);
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -300,23 +450,23 @@ button {
   transition: 0.15s;
 }
 
-#send.send-btn::before {
+#send::before {
   content: "➤";
   font-size: 1.3rem;
   color: white;
   margin-left: 2px;
 }
 
-#send.send-btn:hover {
+#send:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(37,99,235,0.5);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.5);
 }
 
 /* ===== MODAL ===== */
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -333,7 +483,7 @@ button {
   border-radius: 16px;
   width: 400px;
   max-width: 90%;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   text-align: center;
   box-sizing: border-box;
 }
@@ -357,21 +507,20 @@ button {
 .modal-actions {
   display: flex;
   justify-content: center;
-  gap: 16px;           /* khoảng cách đều giữa 2 nút */
+  gap: 16px;
   margin-top: 16px;
 }
-
 
 .modal-actions button {
   padding: 10px 26px;
   border-radius: 999px;
   font-weight: 600;
-  background: linear-gradient(135deg,#f59e0b,#f97316);
+  background: linear-gradient(135deg, #f59e0b, #f97316);
   color: white;
 }
 
 .modal-actions button:hover {
-  background: linear-gradient(135deg,#d97706,#ea580c);
+  background: linear-gradient(135deg, #d97706, #ea580c);
 }
 
 /* ===== SCROLLBAR ===== */
@@ -390,8 +539,9 @@ button {
 
 /* ===== UTIL ===== */
 .hidden {
-  display: none;
+  display: none !important;
 }
+
 .centered {
   display: flex;
   align-items: center;
@@ -408,7 +558,7 @@ button {
   background: #1f2937;
   padding: 10px;
   border-radius: 14px;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
   z-index: 1000;
 }
 
@@ -430,34 +580,28 @@ button {
 }
 
 #emojiPicker span:hover {
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .light #emojiPicker span:hover {
   background: #f1f5f9;
 }
 
-/* ===== LIGHT MODE SOFT (ít chói mắt) ===== */
+/* ===== LIGHT MODE SOFT ===== */
 body.light {
   background: linear-gradient(135deg, #dbe2ec, #cfd8e6);
   color: #1f2937;
 }
 
-/* các khung chính */
 body.light .sidebar,
-body.light .chat-container,
-body.light .rightbar {
+body.light .chat-box {
   background: linear-gradient(180deg, #eef2f7, #e6ebf3);
-  border-radius: 18px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15);
 }
 
-/* header phòng chat */
-body.light .chat-header {
-  border-bottom: 1px solid rgba(0,0,0,0.08);
+body.light .header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-/* item phòng bên trái */
 body.light .room-item {
   background: rgba(59, 130, 246, 0.08);
   color: #1f2937;
@@ -468,59 +612,32 @@ body.light .room-item.active {
   color: #fff;
 }
 
-/* vùng hiển thị tin nhắn */
-body.light .messages {
+body.light #messages {
   background: linear-gradient(180deg, #e9eef6, #dde5f0);
   border-radius: 14px;
 }
 
-/* khung nhập tin nhắn */
-body.light .chat-input {
+body.light .input-area {
   background: linear-gradient(180deg, #e5eaf2, #dbe3ee);
-  border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 0 0 22px 22px;
 }
 
-/* input text */
-body.light .chat-input input {
-  background: transparent;
-  color: #111827;
-}
-
-body.light .chat-input input::placeholder {
+body.light #msg::placeholder {
   color: #6b7280;
 }
 
-/* nút gửi */
-body.light .send-btn {
+body.light #send {
   background: linear-gradient(135deg, #4f8df7, #2563eb);
-  color: #fff;
   box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
 }
 
-body.light .send-btn:hover {
+body.light #send:hover {
   filter: brightness(1.07);
 }
 
-/* emoji picker */
-body.light #emojiPicker {
-  background: linear-gradient(180deg, #eef2f7, #e3e9f2);
-  border: 1px solid rgba(0,0,0,0.08);
-  box-shadow: 0 14px 35px rgba(0,0,0,0.18);
-}
-
-/* khung user online */
-body.light .online-user {
-  background: rgba(0,0,0,0.05);
+body.light .online {
+  background: rgba(0, 0, 0, 0.05);
   border-radius: 10px;
-}
-
-/* nút thoát */
-body.light .leave-btn {
-  background: #ef4444;
-  color: #fff;
-}
-
-body.light .leave-btn:hover {
-  background: #dc2626;
+  padding: 8px 12px;
 }

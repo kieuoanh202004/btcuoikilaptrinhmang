@@ -4,7 +4,13 @@ import json
 import time
 import random
 import string
+import uuid
 
+clients = {}        # ws -> {username, room}
+rooms = {}          # room -> {admin, clients:set()}
+messages = {}       # msg_id -> username (owner)
+typing_status = {}  # (room, username) -> timestamp
+banned_users = {}   # room -> set(username)
 clients = {}
 rooms = {}
 typing_status = {}
@@ -70,6 +76,8 @@ async def clear_typing():
         for (room, user), t in list(typing_status.items()):
             if now - t > 1:
                 del typing_status[(room, user)]
+            if now - t > 3:
+                typing_status.pop((room, user), None)
                 await broadcast_room(room, json.dumps({
                     "type": "stop_typing",
                     "user": user
@@ -124,8 +132,43 @@ async def handler(ws):
 
                 await update_online(room)
 
+            # ===== TEXT MESSAGE =====
             elif data["type"] == "message":
                 info = clients.get(ws)
+                if not info:
+                    continue
+
+                msg_id = "msg-" + uuid.uuid4().hex
+                owner = info["username"]
+                messages[msg_id] = owner
+
+                await broadcast_room(info["room"], json.dumps({
+                    "type": "message",
+                    "from": owner,
+                    "text": data["text"],
+                    "replyTo": data.get("replyTo"),
+                    "msg_id": msg_id,
+                    "time": int(time.time())
+                }))
+
+            # ===== IMAGE =====
+            elif data["type"] == "image":
+                info = clients.get(ws)
+                if not info:
+                    continue
+
+                msg_id = "msg-" + uuid.uuid4().hex
+                owner = info["username"]
+                messages[msg_id] = owner
+
+                await broadcast_room(info["room"], json.dumps({
+                    "type": "image",
+                    "from": owner,
+                    "filename": data.get("filename"),
+                    "data": data.get("data"),
+                    "msg_id": msg_id,
+                    "time": int(time.time())
+                }))
                 if info:
                     await broadcast_room(info["room"], json.dumps({
                         "type": "message",
@@ -187,6 +230,22 @@ async def handler(ws):
 
                 await update_online(room)
 
+            # ===== DELETE MESSAGE =====
+            elif data["type"] == "delete_message":
+                info = clients.get(ws)
+                if not info:
+                    continue
+
+                msg_id = data.get("msg_id")
+                owner = messages.get(msg_id)
+
+                if owner and owner == info["username"]:
+                    messages.pop(msg_id, None)
+                    await broadcast_room(info["room"], json.dumps({
+                        "type": "delete_message",
+                        "msg_id": msg_id
+                    }))
+
                 try:
                     await target_ws.close()
                 except:
@@ -210,6 +269,14 @@ async def handler(ws):
             clients.pop(ws, None)
             typing_status.pop((room, name), None)
 
+            for mid, owner in list(messages.items()):
+                if owner == name:
+                    messages.pop(mid, None)
+
+            await broadcast_room(room, json.dumps({
+                "type": "notification",
+                "text": f"{name} đã rời phòng"
+            }))
             if room in rooms:
                 if not rooms[room]["clients"]:
                     rooms.pop(room, None)
