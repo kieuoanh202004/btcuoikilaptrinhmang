@@ -15,17 +15,15 @@
         <div class="room-item active" data-room="xao-xao">Nhóm xào xáo</div>
       </div>
     </aside>
-
     <!-- Giữa: Khu vực chat -->
     <main class="chat-box">
-      <div class="header">
-        <button id="logout" class="logout-btn">Thoát</button>
-        <div class="group-name">Nhóm xào xáo</div>
-        <div class="header-actions">
-          <input id="searchInput" placeholder="🔍 Tìm tin nhắn..." class="search-box" />
-          <button id="themeToggle" class="theme-btn" title="Đổi giao diện">🌙</button>
-        </div>
+      <div class="header-actions">
+      <div class="search-wrapper">
+        <input id="searchInput" placeholder="🔍 Tìm tin nhắn..." class="search-box" />
+        <div id="searchResults" class="search-results hidden"></div>
       </div>
+      <button id="themeToggle" class="theme-btn" title="Đổi giao diện">🌙</button>
+    </div>
 
       <!-- Khung tin nhắn -->
       <div id="messages"></div>

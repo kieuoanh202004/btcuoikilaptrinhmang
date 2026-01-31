@@ -368,20 +368,75 @@ cancelReply.onclick = () => {
 };
 
 /* ===== SEARCH ===== */
-document.getElementById("searchInput").addEventListener("input", e => {
-  const k = e.target.value.toLowerCase();
-  document.querySelectorAll(".text").forEach(t => {
-    const raw = t.dataset.raw || "";
-    if (!k) {
-      t.innerHTML = linkify(raw);
-    } else {
-      const highlighted = raw.replace(
-        new RegExp(k, "gi"),
-        m => `<span class="highlight">${m}</span>`
-      );
-      t.innerHTML = linkify(highlighted);
-    }
+/* ===== SEARCH (ZALO STYLE) ===== */
+const searchInput = document.getElementById("searchInput");
+const searchResults = document.getElementById("searchResults");
+
+searchInput.addEventListener("input", e => {
+  const keyword = e.target.value.trim().toLowerCase();
+  searchResults.innerHTML = "";
+
+  if (!keyword) {
+    searchResults.classList.add("hidden");
+    return;
+  }
+
+  const msgs = document.querySelectorAll(".message");
+
+  msgs.forEach(msg => {
+    const textEl = msg.querySelector(".text");
+    if (!textEl) return;
+
+    const raw = textEl.dataset.raw || "";
+    if (!raw.toLowerCase().includes(keyword)) return;
+
+    const from =
+      msg.querySelector(".sender-row span")?.innerText || "";
+
+    const preview = raw.replace(
+      new RegExp(keyword, "gi"),
+      m => `<span class="search-highlight">${m}</span>`
+    );
+
+    const item = document.createElement("div");
+    item.className = "search-item";
+    item.innerHTML = `
+      <div class="from">${from}</div>
+      <div class="content">${preview}</div>
+    `;
+
+    item.onclick = () => {
+      searchResults.classList.add("hidden");
+
+      document
+        .querySelectorAll(".message.focused")
+        .forEach(m => m.classList.remove("focused"));
+
+      msg.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      });
+
+      msg.classList.add("focused");
+    };
+
+    searchResults.appendChild(item);
   });
+
+  searchResults.classList.toggle(
+    "hidden",
+    searchResults.children.length === 0
+  );
+});
+
+/* click ra ngoài thì ẩn search */
+document.addEventListener("click", e => {
+  if (
+    !searchResults.contains(e.target) &&
+    e.target !== searchInput
+  ) {
+    searchResults.classList.add("hidden");
+  }
 });
 
 /* ===== LOGOUT ===== */
