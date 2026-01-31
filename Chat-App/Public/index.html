@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chat Realtime</title>
   <link rel="stylesheet" href="Style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
 </head>
 <body class="dark">
   <div class="app">
@@ -17,13 +18,21 @@
     </aside>
     <!-- Giữa: Khu vực chat -->
     <main class="chat-box">
-      <div class="header-actions">
-      <div class="search-wrapper">
-        <input id="searchInput" placeholder="🔍 Tìm tin nhắn..." class="search-box" />
-        <div id="searchResults" class="search-results hidden"></div>
-      </div>
-      <button id="themeToggle" class="theme-btn" title="Đổi giao diện">🌙</button>
-    </div>
+        <!--  Tìm kếm tin nhắn    -->
+      <div class="header">
+        <button id="logout" class="logout-btn">Thoát</button>
+        <div class="group-name">Nhóm xào xáo</div>
+        <div class="header-actions">
+          <div class="search-wrapper">
+            <input id="searchInput" placeholder="Tìm tin nhắn..." class="search-box" />
+            <div id="searchResults" class="search-results hidden"></div>
+          </div>
+          <span class="icon-search"><i class="fa-solid fa-magnifying-glass"></i></span>
+<!--          <span class="close-search"><i class="fa-solid fa-x"></i></span>-->
+          <button id="themeToggle" class="theme-btn" title="Đổi giao diện"><i class="fa-solid fa-moon"></i></button>
+        </div>
+        </div>
+
 
       <!-- Khung tin nhắn -->
       <div id="messages"></div>
@@ -41,8 +50,8 @@
           <input id="msg" placeholder="Nhập tin nhắn..." autocomplete="off" />
           <!-- Các nút chức năng -->
           <div class="action-buttons">
-            <button id="emojiBtn" class="action-btn" title="Thêm emoji">😄</button>
-            <button id="imgBtn" class="action-btn" title="Gửi ảnh">📷</button>
+            <button id="emojiBtn" class="action-btn" title="Thêm emoji"><i class="fa-regular fa-face-smile-beam"></i></button>
+            <button id="imgBtn" class="action-btn" title="Gửi ảnh"><i class="fa-solid fa-camera"></i></button>
             <button id="send" class="send-btn">
               <svg viewBox="0 0 24 24" width="20" height="20">
                 <path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
