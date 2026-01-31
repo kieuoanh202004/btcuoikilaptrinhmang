@@ -247,13 +247,11 @@ ws.onmessage = e => {
   if (data.type === "typing" && data.user !== username) {
     typingDiv.innerText = `${data.user} đang nhập...`;
   }
-
   if (data.type === "stop_typing") {
     typingDiv.innerText = "";
     clearTimeout(typingTimeout);
     typingTimeout = setTimeout(() => typingDiv.innerText = "", 2000);
   }
-
   /* ===== ONLINE ===== */
   if (data.type === "online_list") {
     onlineUsers.innerHTML = "";
@@ -301,12 +299,14 @@ ws.onmessage = e => {
 
 /* ===== SEND ===== */
 function send() {
-  if (!msgInput.value.trim()) return;
+  if (!msgInput.value.trim() && !replyMessage) return;
+
   ws.send(JSON.stringify({
     type: "message",
-    text: msgInput.value,
+    text: msgInput.value || "",
     replyTo: replyMessage
   }));
+
   msgInput.value = "";
   replyMessage = null;
   replyBox.classList.add("hidden");
