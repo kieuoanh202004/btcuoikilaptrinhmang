@@ -40,8 +40,10 @@ body {
 .chat-box,
 .sidebar {
   border-radius: 22px;
-  margin: 18px;
+  margin: 10px;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+  background: rgba(255, 255, 255, 0.05);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .rooms {
@@ -71,11 +73,12 @@ body {
 /* ===== CENTER: CHAT ===== */
 .chat-box {
   flex: 4.5;
-  padding: 30px 25px 20px 40px;
+  padding: 20px 20px 20px 20px;
   display: flex;
   flex-direction: column;
   position: relative;
   background: linear-gradient(180deg, #1f2937, #020617);
+  margin: 10px 5px;
 }
 
 .light .chat-box {
@@ -91,7 +94,9 @@ body {
   font-size: 1.3rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
-
+.header-actions{
+    margin-left: auto;
+}
 .group-name {
   font-size: 1.8rem;
   font-weight: bold;
@@ -101,9 +106,10 @@ body {
 button {
   border: none;
   border-radius: 16px;
-  padding: 10px 18px;
   font-size: 1rem;
   cursor: pointer;
+  display: inline-block;
+  padding: 6px 10px;
 }
 
 .logout-btn {
@@ -136,8 +142,8 @@ button {
 
 .message {
   width: fit-content;
-  max-width: 80%;
-  padding: 20px 24px;
+  max-width: 60%;
+  padding: 9px 15px;
   border-radius: 22px;
   margin: 12px 0;
   font-size: 1.1rem;
@@ -224,8 +230,6 @@ input {
   flex: 1.4;
   padding: 30px;
   font-size: 1.05rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-left: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .light .sidebar {
@@ -255,16 +259,16 @@ input {
 
 .search-box {
   flex: none;
-  width: 180px;
-  padding: 8px 12px;
+  width: 300px;
+  padding: 9px 17px;
   font-size: 0.85rem;
-  margin-left: 20px;
+  margin-right: 20px;
   border-radius: 20px;
   transition: width 0.3s ease;
 }
 
 .search-box:focus {
-  width: 250px;
+  /* width: 250px; */
   outline: none;
   box-shadow: 0 0 5px rgba(56, 131, 216, 0.5);
 }
@@ -366,7 +370,7 @@ input {
   font-style: italic;
 }
 
-/* icon admin sát tên và to */
+/* icon admin sÃƒÂ¡t tÃƒÂªn vÃƒÂ  to */
 .admin {
   font-size: 1.1rem;
   margin-left: 2px;
@@ -399,16 +403,16 @@ input {
 .input-wrapper {
   flex: 1;
   position: relative;
-  min-height: 52px; /* Đổi height thành min-height để tránh lỗi hiển thị */
+  min-height: 52px; /* Ã„ÂÃ¡Â»â€¢i height thÃƒÂ nh min-height Ã„â€˜Ã¡Â»Æ’ trÃƒÂ¡nh lÃ¡Â»â€”i hiÃ¡Â»Æ’n thÃ¡Â»â€¹ */
   display: flex;
   align-items: center;
-  background: #1f2937; /* Đưa background ra wrapper */
+  background: #1f2937; /* Ã„ÂÃ†Â°a background ra wrapper */
   border-radius: 26px;
-  padding-right: 6px; /* Tạo khoảng hở cho nút gửi */
+  padding-right: 6px; /* TÃ¡ÂºÂ¡o khoÃ¡ÂºÂ£ng hÃ¡Â»Å¸ cho nÃƒÂºt gÃ¡Â»Â­i */
 }
 
 #msg {
-  flex: 1; /* Tự co giãn thay vì width 100% */
+  flex: 1; /* TÃ¡Â»Â± co giÃƒÂ£n thay vÃƒÂ¬ width 100% */
   width: auto;
   height: 52px;
   padding: 0 10px 0 18px;
@@ -416,7 +420,7 @@ input {
   border: none;
   outline: none;
   font-size: 1rem;
-  background: transparent; /* Bỏ nền input vì đã có ở wrapper */
+  background: transparent; /* BÃ¡Â»Â nÃ¡Â»Ân input vÃƒÂ¬ Ã„â€˜ÃƒÂ£ cÃƒÂ³ Ã¡Â»Å¸ wrapper */
   color: #e5e7eb;
 }
 
@@ -479,10 +483,12 @@ input {
   flex-shrink: 0;
   cursor: pointer;
   transition: 0.15s;
+
+  color: white;
 }
 
 #send::before {
-  content: "➤";
+  content: "";
   font-size: 1.3rem;
   color: white;
   margin-left: 2px;
