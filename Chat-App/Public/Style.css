@@ -395,25 +395,56 @@ input {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+
 .input-wrapper {
   flex: 1;
   position: relative;
-  height: 52px;
+  min-height: 52px; /* Đổi height thành min-height để tránh lỗi hiển thị */
   display: flex;
   align-items: center;
+  background: #1f2937; /* Đưa background ra wrapper */
+  border-radius: 26px;
+  padding-right: 6px; /* Tạo khoảng hở cho nút gửi */
 }
 
 #msg {
-  width: 100%;
+  flex: 1; /* Tự co giãn thay vì width 100% */
+  width: auto;
   height: 52px;
-  padding: 0 48px 0 18px;
+  padding: 0 10px 0 18px;
   border-radius: 26px;
   border: none;
   outline: none;
   font-size: 1rem;
-  background: #1f2937;
+  background: transparent; /* Bỏ nền input vì đã có ở wrapper */
   color: #e5e7eb;
 }
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  color: #e5e7eb;
+  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 
 #msg::placeholder {
   color: rgba(255, 255, 255, 0.5);

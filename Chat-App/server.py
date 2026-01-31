@@ -6,15 +6,11 @@ import random
 import string
 import uuid
 
-clients = {}        # ws -> {username, room}
-rooms = {}          # room -> {admin, clients:set()}
-messages = {}       # msg_id -> username (owner)
+clients = {}  # ws -> {username, room}
+rooms = {}  # room -> {admin, clients:set()}
+messages = {}  # msg_id -> username (owner)
 typing_status = {}  # (room, username) -> timestamp
-banned_users = {}   # room -> set(username)
-clients = {}
-rooms = {}
-typing_status = {}
-banned_users = {}
+banned_users = {}  # room -> set(username)
 
 
 def gen_room_code():
@@ -169,13 +165,8 @@ async def handler(ws):
                     "msg_id": msg_id,
                     "time": int(time.time())
                 }))
-                if info:
-                    await broadcast_room(info["room"], json.dumps({
-                        "type": "message",
-                        "from": info["username"],
-                        "text": data["text"],
-                        "time": time.time()
-                    }))
+
+                # Đã xóa đoạn code gây lỗi KeyError: 'text' ở đây
 
             elif data["type"] == "typing":
                 info = clients.get(ws)
@@ -246,10 +237,7 @@ async def handler(ws):
                         "msg_id": msg_id
                     }))
 
-                try:
-                    await target_ws.close()
-                except:
-                    pass
+                # Đã xóa đoạn code try close target_ws bị thừa ở đây
 
     except Exception as e:
         print("❌ Lỗi:", e)
@@ -269,9 +257,9 @@ async def handler(ws):
             clients.pop(ws, None)
             typing_status.pop((room, name), None)
 
-            for mid, owner in list(messages.items()):
-                if owner == name:
-                    messages.pop(mid, None)
+            # for mid, owner in list(messages.items()):
+            #     if owner == name:
+            #         messages.pop(mid, None)
 
             await broadcast_room(room, json.dumps({
                 "type": "notification",
@@ -304,5 +292,6 @@ async def main():
         print("✅ Server chạy tại ws://localhost:8765")
         asyncio.create_task(clear_typing())
         await asyncio.Future()
+
 
 asyncio.run(main())

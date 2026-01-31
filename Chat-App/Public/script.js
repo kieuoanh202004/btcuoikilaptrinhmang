@@ -132,7 +132,8 @@ ws.onmessage = e => {
   if (data.type === "message") {
     const div = document.createElement("div");
     div.className = "message " + (data.from === username ? "me" : "other");
-    const msgId = data.msg_id || ("msg-" + Date.now());
+    // const msgId = data.msg_id || ("msg-" + Date.now());
+    const msgId = data.msg_id;
     div.id = msgId;
 
     const senderRow = document.createElement("div");
@@ -181,11 +182,12 @@ ws.onmessage = e => {
   }
 
   /* ===== IMAGE ===== */
+  /* ===== IMAGE ===== */
   if (data.type === "image") {
     const div = document.createElement("div");
     div.className = "message " + (data.from === username ? "me" : "other");
-    div.id = data.msg_id || ("img-" + Date.now());
-
+    // div.id = data.msg_id || ("img-" + Date.now());
+    div.id = data.msg_id;
     const senderRow = document.createElement("div");
     senderRow.className = "sender-row";
 
@@ -194,6 +196,14 @@ ws.onmessage = e => {
     sender.style.color =
       data.from === username ? "#fff" : getNameColor(data.from);
     senderRow.appendChild(sender);
+
+    // Hiển thị Reply Preview nếu ảnh này là tin trả lời (nếu sau này bạn nâng cấp)
+    if (data.replyTo) {
+      const rp = document.createElement("div");
+      rp.className = "reply-preview";
+      rp.innerText = `↪ ${data.replyTo.from}: ${data.replyTo.text}`;
+      div.appendChild(rp);
+    }
 
     if (data.from === username) {
       const del = document.createElement("span");
@@ -207,7 +217,19 @@ ws.onmessage = e => {
     const img = document.createElement("img");
     img.src = data.data;
 
-    div.append(senderRow, img);
+    // --- BỔ SUNG: NÚT REPLY CHO ẢNH ---
+    const replyBtn = document.createElement("button");
+    replyBtn.className = "reply-btn";
+    replyBtn.innerText = "↪";
+    replyBtn.onclick = () => {
+      // Khi reply ảnh, ta đặt text hiển thị là [Hình ảnh]
+      replyMessage = { from: data.from, text: "[Hình ảnh]" };
+      replyText.innerText = `↪ ${data.from}: [Hình ảnh]`;
+      replyBox.classList.remove("hidden");
+      msgInput.focus();
+    };
+
+    div.append(senderRow, img, replyBtn); // Nhớ append replyBtn vào div
     messages.appendChild(div);
     messages.scrollTop = messages.scrollHeight;
   }
