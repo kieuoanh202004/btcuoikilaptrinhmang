@@ -334,14 +334,21 @@ input {
 }
 
 .reply-preview {
-  background: rgba(0, 0, 0, 0.12);
-  padding: 8px 10px;
+  font-size: 13px;
+  padding: 6px 8px;
   border-left: 3px solid #38bdf8;
-  margin-bottom: 8px;
-  border-radius: 8px;
-  font-size: 0.9rem;
+  background: rgba(56,189,248,.12);
+  margin-bottom: 6px;
+  border-radius: 4px;
 }
-
+.message.focused {
+  animation: flash 2s ease;
+  outline: 2px solid #38bdf8;
+}
+@keyframes flash {
+  0% { background: rgba(56,189,248,.4); }
+  100% { background: transparent; }
+}
 .input-wrapper {
   position: relative;
 }

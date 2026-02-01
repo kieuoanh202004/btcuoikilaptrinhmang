@@ -170,7 +170,11 @@ ws.onmessage = e => {
     replyBtn.className = "reply-btn";
     replyBtn.innerText = "↪";
     replyBtn.onclick = () => {
-      replyMessage = { from: data.from, text: data.text };
+      replyMessage = {
+        msg_id: data.msg_id,
+        from: data.from,
+        text: data.text
+      };
       replyText.innerText = `↪ ${data.from}: ${data.text}`;
       replyBox.classList.remove("hidden");
       msgInput.focus();
@@ -197,11 +201,27 @@ ws.onmessage = e => {
       data.from === username ? "#fff" : getNameColor(data.from);
     senderRow.appendChild(sender);
 
-    // Hiển thị Reply Preview nếu ảnh này là tin trả lời (nếu sau này bạn nâng cấp)
     if (data.replyTo) {
       const rp = document.createElement("div");
       rp.className = "reply-preview";
       rp.innerText = `↪ ${data.replyTo.from}: ${data.replyTo.text}`;
+      rp.style.cursor = "pointer";
+
+      rp.onclick = () => {
+        const target = document.getElementById(data.replyTo.msg_id);
+        if (!target) return;
+
+        target.scrollIntoView({
+          behavior: "smooth",
+          block: "center"
+        });
+
+        target.classList.add("focused");
+        setTimeout(() => {
+          target.classList.remove("focused");
+        }, 2000);
+      };
+
       div.appendChild(rp);
     }
 
